@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "FacultyApp",
+    "slug": "faculty-app",
+    "version": "0.1.0",
+    "scheme": "facultyapp",
+    "owner": "neurocampus",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+  "icon": "./assets/icon.png",
+    "splash": {
+  "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.neurocampus.faculty",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSCameraUsageDescription": "Camera access is needed for attendance photos and profile images.",
+        "NSContactsUsageDescription": "Contacts access allows inviting colleagues/students.",
+        "NSUserTrackingUsageDescription": "We use this to improve notification relevance.",
+        "NSPhotoLibraryUsageDescription": "Photo library access is needed to select profile images.",
+        "NSPhotoLibraryAddUsageDescription": "Allow saving images associated with attendance."
+      }
+    },
+    "android": {
+      "package": "com.neurocampus.faculty",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "READ_CONTACTS",
+        "WRITE_CONTACTS",
+        "CAMERA",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#2563eb"
+    },
+    "plugins": [
+      ["expo-notifications"],
+      ["expo-camera"],
+      ["expo-contacts"],
+      ["expo-image-picker"],
+      ["expo-font"],
+      ["expo-secure-store"]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
