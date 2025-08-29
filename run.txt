@@ -1,0 +1,23 @@
+# How to Run this Project (React Native Faculty App)
+
+1. After cloning the repo, open terminal and go to project folder:
+   cd react-native-faculty
+
+2. Install dependencies:
+   npm install
+
+3. Start Expo and log in:
+   npx expo start --login
+   # Enter your email and password used in the Expo Go app on your phone
+
+4. Start the project using tunnel mode:
+   npx expo start --tunnel ( QR code will appear)
+
+5. On your phone:
+   - Download **Expo Go** from Play Store / App Store (make sure it supports SDK version 51)
+   - Log in with the same account you used in terminal
+   - Scan the QR code shown in terminal/browser or paste the URL manually
+
+6. Notes:
+   - Tunnel mode is recommended if your phone and laptop are not on the same Wi-Fi
+   - Ensure your Expo Go app is updated to SDK 51 for compatibility
