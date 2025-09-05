@@ -73,7 +73,7 @@ export async function apiFetch(path: string, options: FetchOptions = {}) {
   return res;
 }
 
-export async function jsonFetch<T>(path: string, options: FetchOptions = {}): Promise<{ ok: boolean; data?: T; error?: string; status?: number }> {
+export async function jsonFetch<T>(path: string, options: FetchOptions = {}): Promise<{ success: boolean; data?: T; message?: string; error?: string; status?: number }> {
   try {
     const res = await apiFetch(path, options);
     let data: any = null;
@@ -84,14 +84,14 @@ export async function jsonFetch<T>(path: string, options: FetchOptions = {}): Pr
       try {
         const text = await res.text();
         const snippet = text.slice(0, 180).replace(/\s+/g, ' ');
-        return { ok: false, error: `Invalid JSON in response: ${snippet}`, status: res.status };
+        return { success: false, error: `Invalid JSON in response: ${snippet}`, status: res.status };
       } catch {
-        return { ok: false, error: 'Invalid JSON in response', status: res.status };
+        return { success: false, error: 'Invalid JSON in response', status: res.status };
       }
     }
-    if (!res.ok) return { ok: false, error: data?.message || `Request failed (${res.status})`, status: res.status };
-    return { ok: true, data, status: res.status };
+    if (!res.ok) return { success: false, message: data?.message || `Request failed (${res.status})`, error: data?.message || `Request failed (${res.status})`, status: res.status };
+    return { success: true, data, message: data?.message, status: res.status };
   } catch (e: any) {
-    return { ok: false, error: e.message || 'Network error' };
+    return { success: false, error: e.message || 'Network error' };
   }
 }

@@ -22,7 +22,7 @@ export default function ReportsScreen() {
   }
   return (
     <View style={{ flex:1, padding:16 }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:16 }}>Reports</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:16 }}>Reports</Text>
       <View style={{ flexDirection:'row', flexWrap:'wrap', gap:12 }}>
         <TouchableOpacity onPress={loadAttendance} style={{ backgroundColor:'#1d4ed8', padding:12, borderRadius:10, marginRight:12, marginBottom:12 }}>
           <Text style={{ color:'#fff' }}>{loadingA? 'Loading...':'Attendance Report'}</Text>
@@ -34,14 +34,14 @@ export default function ReportsScreen() {
       {loadingA && <ActivityIndicator style={{ marginTop:12 }} />}
       {attendanceSummary && !loadingA && (
         <View style={{ backgroundColor:'#f1f5f9', padding:12, borderRadius:10, marginTop:12 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold' }}>Attendance Summary</Text>
+          <Text style={{ fontFamily:'System' }}>Attendance Summary</Text>
           <Text style={{ fontSize:12, color:'#475569' }}>{JSON.stringify(attendanceSummary).slice(0,240)}</Text>
         </View>
       )}
       {loadingM && <ActivityIndicator style={{ marginTop:12 }} />}
       {marksSummary && !loadingM && (
         <View style={{ backgroundColor:'#f1f5f9', padding:12, borderRadius:10, marginTop:12 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold' }}>Marks Summary</Text>
+          <Text style={{ fontFamily:'System' }}>Marks Summary</Text>
           <Text style={{ fontSize:12, color:'#475569' }}>{JSON.stringify(marksSummary).slice(0,240)}</Text>
         </View>
       )}

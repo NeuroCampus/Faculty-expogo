@@ -1,5 +1,7 @@
-import { jsonFetch } from './client';
-import { fetchWithCache } from '../utils/offline';
+import { API_BASE_URL } from "./config";
+import { fetchWithTokenRefresh } from "./authService";
+import { fetchWithCache } from "../utils/offline";
+import { jsonFetch } from "./client";
 
 export interface FacultyAssignment { subject_name: string; subject_code: string; subject_id: number; section: string; section_id: number; semester: number; semester_id: number; branch: string; branch_id: number; has_timetable: boolean; }
 export interface ProctorStudent { name: string; usn: string; attendance: number; branch?: string | null; semester?: number | null; section?: string | null; }
@@ -27,14 +29,32 @@ export async function getStudentsForClass(params: { branch_id: number; semester_
   const q = new URLSearchParams({ branch_id: String(params.branch_id), semester_id: String(params.semester_id), section_id: String(params.section_id), subject_id: String(params.subject_id) }).toString();
   return jsonFetch<{ success: boolean; data: ClassStudent[] }>(`/faculty/students/?${q}`, { auth: true });
 }
-export async function takeAttendance(payload: { branch_id: string; semester_id: string; section_id: string; subject_id: string; attendance: { student_id: string; status: boolean }[]; }) {
+export async function takeAttendance(payload: { 
+  branch_id: string; 
+  semester_id: string; 
+  section_id: string; 
+  subject_id: string; 
+  method?: 'manual' | 'ai';
+  attendance?: { student_id: string; status: boolean }[];
+  class_images?: any[];
+}) {
   const body = new FormData();
   body.append('branch_id', payload.branch_id);
   body.append('semester_id', payload.semester_id);
   body.append('section_id', payload.section_id);
   body.append('subject_id', payload.subject_id);
-  body.append('method', 'manual');
-  body.append('attendance', JSON.stringify(payload.attendance));
+  body.append('method', payload.method || 'manual');
+  
+  if (payload.method === 'ai' && payload.class_images) {
+    payload.class_images.forEach((file, index) => {
+      body.append(`class_images[${index}]`, file);
+    });
+  }
+  
+  if (payload.method === 'manual' && payload.attendance) {
+    body.append('attendance', JSON.stringify(payload.attendance));
+  }
+  
   return jsonFetch<{ success: boolean; message?: string }>('/faculty/take-attendance/', { auth: true, method: 'POST', body });
 }
 export async function getAttendanceRecordsList() { return fetchWithCache('attendance-records', () => jsonFetch<{ success: boolean; data: any[] }>('/faculty/attendance-records/list/', { auth: true })); }
@@ -45,11 +65,30 @@ export async function getInternalMarks(params: { branch_id: number; semester_id:
   const q = new URLSearchParams(Object.entries(params).reduce((a,[k,v])=>{a[k]=String(v);return a;}, {} as Record<string,string>)).toString();
   return jsonFetch<{ success: boolean; data: InternalMarkStudent[] }>(`/faculty/internal-marks/?${q}`, { auth: true });
 }
-export async function uploadInternalMarks(payload: { branch_id: string; semester_id: string; section_id: string; subject_id: string; test_number: number; marks: { student_id: string; mark: number }[]; }) {
+export async function uploadInternalMarks(payload: { 
+  branch_id: string; 
+  semester_id: string; 
+  section_id: string; 
+  subject_id: string; 
+  test_number: number; 
+  marks?: { student_id: string; mark: number }[];
+  file?: any;
+}) {
   const body = new FormData();
-  Object.entries(payload).forEach(([k,v]) => {
-    if (k === 'marks') body.append('marks', JSON.stringify(v)); else body.append(k, String(v));
-  });
+  body.append('branch_id', payload.branch_id);
+  body.append('semester_id', payload.semester_id);
+  body.append('section_id', payload.section_id);
+  body.append('subject_id', payload.subject_id);
+  body.append('test_number', payload.test_number.toString());
+  
+  if (payload.marks) {
+    body.append('marks', JSON.stringify(payload.marks));
+  }
+  
+  if (payload.file) {
+    body.append('file', payload.file);
+  }
+  
   return jsonFetch<{ success: boolean; message?: string }>('/faculty/upload-marks/', { auth: true, method: 'POST', body });
 }
 
@@ -116,5 +155,51 @@ export async function getMarksReport(params: { branch_id?: string; semester_id?:
   const q = new URLSearchParams(Object.entries(params).filter(([,v])=> v != null && v !== '').map(([k,v])=> [k,String(v)])).toString();
   return jsonFetch<{ success: boolean; data: any }>(`/faculty/reports/marks/${q?`?${q}`:''}`, { auth: true });
 }
+
+// Additional API functions for enhanced functionality
+export const viewAttendanceRecords = async (params: any) => {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const response = await fetchWithTokenRefresh(`${API_BASE_URL}/faculty/attendance-records/?${query}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("View Attendance Records Error:", error);
+    return { success: false, message: "Network error" };
+  }
+};
+
+export const downloadPDF = async (filename: string) => {
+  try {
+    const response = await fetchWithTokenRefresh(`${API_BASE_URL}/faculty/download-pdf/${filename}/`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    });
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      return { success: true, file_url: url };
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Download PDF Error:", error);
+    return { success: false, message: "Network error" };
+  }
+};
+
+// Legacy compatibility functions for screens
+export const getFacultyAssignments = getAssignments;
+export const getFacultySentNotifications = getSentNotifications;
+export const getFacultyLeaveRequests = getLeaveRequests;
+export const getFacultyProfile = getProfile;
+export const getDashboardOverview = getDashboard;
+export const getInternalMarksForClass = getInternalMarks;
 
 

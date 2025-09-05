@@ -4,12 +4,12 @@ import { apiFetch, jsonFetch, startProactiveRefresh } from './client';
 interface LoginResponse { success: boolean; message?: string; access?: string; refresh?: string; role?: string; profile?: any; user_id?: string; }
 
 export async function login(username: string, password: string) {
-  const { ok, data, error } = await jsonFetch<LoginResponse>('/login/', {
+  const { success, data, error } = await jsonFetch<LoginResponse>('/login/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })
   });
-  if (!ok) return { success: false, message: error };
+  if (!success) return { success: false, message: error };
   if (data?.access) {
     await AsyncStorage.setItem('access_token', data.access);
     if (data.refresh) await AsyncStorage.setItem('refresh_token', data.refresh);
@@ -21,11 +21,20 @@ export async function login(username: string, password: string) {
 }
 
 export async function verifyOTP(user_id: string, otp: string) {
-  return jsonFetch<LoginResponse>('/verify-otp/', {
+  const { success, data, error } = await jsonFetch<LoginResponse>('/verify-otp/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id, otp })
   });
+  if (!success) return { success: false, message: error };
+  if (data?.access) {
+    await AsyncStorage.setItem('access_token', data.access);
+    if (data.refresh) await AsyncStorage.setItem('refresh_token', data.refresh);
+    if (data.role) await AsyncStorage.setItem('role', data.role);
+    if (data.profile) await AsyncStorage.setItem('user', JSON.stringify(data.profile));
+    startProactiveRefresh();
+  }
+  return { success, data, message: data?.message };
 }
 
 export async function resendOTP(user_id: string) {

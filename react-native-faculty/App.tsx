@@ -22,12 +22,10 @@ export default function App() {
   React.useEffect(() => {
     (async () => {
       try {
-        await Font.loadAsync({
-          Inter: require('./assets/fonts/Inter-Regular.ttf'),
-          'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.ttf'),
-        });
+        // Skip font loading for now due to corrupted font files
+        console.log('Skipping custom font loading');
       } catch (e) {
-        console.warn('Font load failed (placeholder fonts?) proceeding without custom fonts');
+        console.warn('Font load failed:', e);
       } finally {
         setReady(true);
       }

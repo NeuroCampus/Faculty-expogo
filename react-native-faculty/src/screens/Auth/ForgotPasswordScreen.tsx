@@ -14,7 +14,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   }
   return (
     <View style={{ flex:1, padding:24, justifyContent:'center' }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:16 }}>Forgot Password</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:16 }}>Forgot Password</Text>
       <TextInput value={email} onChangeText={setEmail} placeholder='Email' autoCapitalize='none' style={{ borderWidth:1, borderColor:'#ccc', borderRadius:8, padding:12, marginBottom:12 }} />
       {msg && <Text style={{ marginBottom:8 }}>{msg}</Text>}
       <TouchableOpacity onPress={submit} disabled={loading} style={{ backgroundColor:'#2563eb', padding:14, borderRadius:8, alignItems:'center' }}>

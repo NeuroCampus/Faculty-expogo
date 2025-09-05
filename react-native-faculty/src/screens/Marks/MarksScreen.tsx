@@ -59,18 +59,18 @@ export default function MarksScreen() {
 
   return (
     <View style={{ flex:1, padding:16 }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:12 }}>Upload Marks</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:12 }}>Upload Marks</Text>
       {isLoading && <ActivityIndicator />}
       {!selected ? (
         <FlatList data={assignments} keyExtractor={(i)=>String(i.subject_id)+i.section_id} renderItem={({ item }) => (
           <TouchableOpacity onPress={()=>pick(item)} style={{ padding:14, backgroundColor:'#fff', borderRadius:10, marginBottom:10, borderWidth:1, borderColor:'#e5e7eb' }}>
-            <Text style={{ fontFamily:'Inter-SemiBold' }}>{item.subject_name}</Text>
+            <Text style={{ fontFamily:'System' }}>{item.subject_name}</Text>
             <Text style={{ color:'#555' }}>{item.branch} • Sem {item.semester} • {item.section}</Text>
           </TouchableOpacity>
         )} />
       ) : (
         <View style={{ flex:1 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold', marginBottom:8 }}>{selected.subject_name} ({selected.section})</Text>
+          <Text style={{ fontFamily:'System', marginBottom:8 }}>{selected.subject_name} ({selected.section})</Text>
           <View style={{ flexDirection:'row', gap:8, marginBottom:8 }}>
             {[1,2,3,4].map(n => (
               <TouchableOpacity key={n} onPress={()=> setTest(n)} style={{ paddingVertical:6, paddingHorizontal:12, borderRadius:8, backgroundColor: test===n? '#2563eb':'#e5e7eb' }}>
@@ -88,7 +88,7 @@ export default function MarksScreen() {
             </View>
           )} />
           <TouchableOpacity onPress={save} style={{ backgroundColor:'#2563eb', padding:14, borderRadius:8, alignItems:'center', marginTop:8 }}>
-            <Text style={{ color:'#fff', fontFamily:'Inter-SemiBold' }}>Save Marks</Text>
+            <Text style={{ color:'#fff', fontFamily:'System' }}>Save Marks</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={()=> setSelected(null)} style={{ padding:12, alignItems:'center', marginTop:4 }}>
             <Text style={{ color:'#2563eb' }}>Back</Text>

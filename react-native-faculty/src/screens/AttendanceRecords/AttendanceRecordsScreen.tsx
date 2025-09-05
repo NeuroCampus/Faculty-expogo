@@ -17,20 +17,20 @@ export default function AttendanceRecordsScreen() {
   };
   return (
     <View style={{ flex:1, padding:16 }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:12 }}>Attendance Records</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:12 }}>Attendance Records</Text>
       {isLoading ? <ActivityIndicator /> : selected ? (
         <ScrollView style={{ flex:1 }}>
           <TouchableOpacity onPress={()=> { setSelected(null); setDetails(null);} }><Text style={{ color:'#2563eb', marginBottom:8 }}>← Back</Text></TouchableOpacity>
-          <Text style={{ fontFamily:'Inter-SemiBold', marginBottom:8 }}>{selected.date} • {selected.subject} • {selected.section}</Text>
+          <Text style={{ fontFamily:'System', marginBottom:8 }}>{selected.date} • {selected.subject} • {selected.section}</Text>
           {loadingDetails && <ActivityIndicator />}
           {details && (
             <View style={{ flexDirection:'row', gap:20 }}>
               <View style={{ flex:1 }}>
-                <Text style={{ fontFamily:'Inter-SemiBold' }}>Present</Text>
+                <Text style={{ fontFamily:'System' }}>Present</Text>
                 {details.present.map((p:any,i:number)=>(<Text key={i}>{p.name} ({p.usn})</Text>))}
               </View>
               <View style={{ flex:1 }}>
-                <Text style={{ fontFamily:'Inter-SemiBold' }}>Absent</Text>
+                <Text style={{ fontFamily:'System' }}>Absent</Text>
                 {details.absent.map((a:any,i:number)=>(<Text key={i}>{a.name} ({a.usn})</Text>))}
               </View>
             </View>
@@ -39,7 +39,7 @@ export default function AttendanceRecordsScreen() {
       ) : (
         <FlatList data={records} keyExtractor={(r:any)=>String(r.id)} renderItem={({ item }) => (
           <TouchableOpacity onPress={()=>open(item)} style={{ backgroundColor:'#fff', padding:12, borderRadius:8, marginBottom:8, borderWidth:1, borderColor:'#e5e7eb' }}>
-            <Text style={{ fontFamily:'Inter-SemiBold' }}>{item.date} • {item.subject}</Text>
+            <Text style={{ fontFamily:'System' }}>{item.date} • {item.subject}</Text>
             <Text style={{ color:'#555' }}>{item.section} • {item.branch}</Text>
           </TouchableOpacity>
         )} />
