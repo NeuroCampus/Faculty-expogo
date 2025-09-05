@@ -1,24 +1,163 @@
 import React from 'react';
-import { View, Text, RefreshControl, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useQuery, useQueries } from '@tanstack/react-query';
-import { getDashboard, getAssignments, getProctorStudents } from '../../api/faculty';
+import { View, Text, RefreshControl, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions, Animated } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { getDashboardOverview, getFacultyAssignments, getProctorStudents } from '../../api/faculty';
 import { usePushRegistration } from '../../services/notifications/usePushRegistration';
 import * as Notifications from 'expo-notifications';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { AttendanceChart } from '../../components/charts/AttendanceChart';
+import { useAuth } from '../../context/AuthContext';
 
-// Simple colored bar for performance metrics
-function MetricBar({ value, color }: { value: number; color: string }) {
-  const pct = isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+const { width } = Dimensions.get('window');
+
+// Animated Card Component
+function AnimatedCard({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const [animation] = React.useState(new Animated.Value(0));
+
+  React.useEffect(() => {
+    Animated.timing(animation, {
+      toValue: 1,
+      duration: 500,
+      delay,
+      useNativeDriver: true,
+    }).start();
+  }, [animation, delay]);
+
   return (
-    <View style={{ height:8, backgroundColor:'#e2e8f0', borderRadius:4, overflow:'hidden', marginTop:4 }}>
-      <View style={{ width:`${pct}%`, backgroundColor:color, flex:1 }} />
-    </View>
+    <Animated.View
+      style={{
+        opacity: animation,
+        transform: [{
+          translateY: animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20, 0],
+          }),
+        }],
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+// Stats Card Component with Gradient
+function StatsCard({
+  label,
+  value,
+  icon,
+  color,
+  bgColor,
+  delay
+}: {
+  label: string;
+  value: string | number;
+  icon: string;
+  color: string;
+  bgColor: string;
+  delay: number;
+}) {
+  return (
+    <AnimatedCard delay={delay}>
+      <View style={[styles.statsCard, { backgroundColor: bgColor }]}>
+        <View style={styles.statsGradient}>
+          <View style={styles.statsHeader}>
+            <View style={[styles.statsIcon, { backgroundColor: color + '20' }]}>
+              <Ionicons name={icon as any} size={20} color={color} />
+            </View>
+            <Text style={[styles.statsLabel, { color: color }]}>{label}</Text>
+          </View>
+          <Text style={[styles.statsValue, { color: color }]}>{value}</Text>
+        </View>
+      </View>
+    </AnimatedCard>
+  );
+}
+
+// Quick Action Button Component
+function QuickActionButton({
+  title,
+  icon,
+  color,
+  onPress,
+  delay
+}: {
+  title: string;
+  icon: string;
+  color: string;
+  onPress: () => void;
+  delay: number;
+}) {
+  const [scaleAnim] = React.useState(new Animated.Value(1));
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <AnimatedCard delay={delay}>
+      <TouchableOpacity
+        style={[styles.quickActionButton, { backgroundColor: color }]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.8}
+      >
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <Ionicons name={icon as any} size={24} color="#fff" />
+          <Text style={styles.quickActionText}>{title}</Text>
+        </Animated.View>
+      </TouchableOpacity>
+    </AnimatedCard>
+  );
+}
+
+// Class Schedule Card
+function ClassCard({ classInfo, delay }: { classInfo: any; delay: number }) {
+  return (
+    <AnimatedCard delay={delay}>
+      <View style={styles.classCard}>
+        <View style={styles.classHeader}>
+          <View style={styles.classInfo}>
+            <Text style={styles.classCourse}>{classInfo.course}</Text>
+            <View style={styles.classMeta}>
+              <View style={styles.classMetaItem}>
+                <Ionicons name="time" size={14} color="#64748b" />
+                <Text style={styles.classMetaText}>{classInfo.time}</Text>
+              </View>
+              <View style={styles.classMetaItem}>
+                <Ionicons name="location" size={14} color="#64748b" />
+                <Text style={styles.classMetaText}>{classInfo.room}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.classActions}>
+            <Text style={styles.studentCount}>{classInfo.studentsCount} Students</Text>
+            <TouchableOpacity style={styles.takeAttendanceBtn}>
+              <Text style={styles.takeAttendanceText}>Take Attendance</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </AnimatedCard>
   );
 }
 
 export default function DashboardScreen() {
+  const { user } = useAuth();
   usePushRegistration();
   const navigation: any = useNavigation();
+
   React.useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(() => {
       navigation.navigate('Notification Center');
@@ -26,119 +165,358 @@ export default function DashboardScreen() {
     return () => sub.remove();
   }, [navigation]);
 
-  const dashboardQ = useQuery({ queryKey:['dashboard'], queryFn: async () => { const r = await getDashboard(); if(!r.ok) throw new Error(r.error); return r.data; } });
-  const assignmentsQ = useQuery({ queryKey:['assignments'], queryFn: async () => { const r = await getAssignments(); if(!r.ok) throw new Error(r.error); return r.data; } });
-  const proctorQ = useQuery({ queryKey:['proctor-students'], queryFn: async () => { const r = await getProctorStudents(); if(!r.ok) throw new Error(r.error); return r.data; } });
-
-  const refreshing = dashboardQ.isFetching || assignmentsQ.isFetching || proctorQ.isFetching;
-  const overview = dashboardQ.data?.data;
-  const subjects = assignmentsQ.data?.data || [];
-  const proctorStudents = proctorQ.data?.data || [];
-
-  // Prepare stats similar to web version
-  const topStats = [
-    { label:'Assigned Subjects', value: subjects.length, bg:'#eff6ff', accent:'#2563eb' },
-    { label:'Proctor Students', value: proctorStudents.length, bg:'#f0fdf4', accent:'#059669' },
-    { label:'Today Classes', value: overview?.today_classes?.length || 0, bg:'#fefce8', accent:'#ca8a04' },
-    { label:'Attendance %', value: overview?.attendance_snapshot ?? '--', bg:'#f1f5f9', accent:'#475569' }
-  ];
-
-  // Performance data (attendance & marks if available)
-  const attendanceData = proctorStudents.map((s:any) => ({ name:s.name, attendance: s.attendance ?? 0 }));
-  const marksData = proctorStudents.map((s:any) => {
-    if (Array.isArray(s.marks) && s.marks.length) {
-      const avg = s.marks.reduce((sum:number,m:any)=> sum + (m.mark||0),0)/s.marks.length;
-      return { name:s.name, avg: Number(avg.toFixed(1)) };
+  const dashboardQ = useQuery({
+    queryKey:['dashboard'],
+    queryFn: async () => {
+      const r = await getDashboardOverview();
+      if(!r.success) throw new Error(r.message);
+      return r;
     }
-    return { name:s.name, avg:0 };
   });
 
+  const assignmentsQ = useQuery({
+    queryKey:['assignments'],
+    queryFn: async () => {
+      const r = await getFacultyAssignments();
+      if(!r.success) throw new Error(r.message);
+      return r;
+    }
+  });
+
+  const proctorQ = useQuery({
+    queryKey:['proctor-students'],
+    queryFn: async () => {
+      const r = await getProctorStudents();
+      if(!r.success) throw new Error(r.message);
+      return r;
+    }
+  });
+
+  const refreshing = dashboardQ.isFetching || assignmentsQ.isFetching || proctorQ.isFetching;
+  const overview = dashboardQ.data?.data || {} as any;
+  const subjects = Array.isArray(assignmentsQ.data?.data) ? assignmentsQ.data.data : [];
+  const proctorStudents = Array.isArray(proctorQ.data?.data) ? proctorQ.data.data : [];
+
+  const handleRefresh = () => {
+    dashboardQ.refetch();
+    assignmentsQ.refetch();
+    proctorQ.refetch();
+  };
+
+  // Mock data for today's classes (adapt to real data)
+  const todaysClasses = [
+    { course: 'CS301: Operating Systems', time: '10:00 AM', room: 'Room 301', studentsCount: 40 },
+    { course: 'CS401: Artificial Intelligence', time: '01:30 PM', room: 'Room 401', studentsCount: 32 },
+    { course: 'CS501: Advanced Databases', time: '03:00 PM', room: 'Lab 202', studentsCount: 28 },
+  ];
+
+  // Mock attendance data
+  const attendanceData = [
+    { name: 'OS', present: 88, absent: 12 },
+    { name: 'AI', present: 85, absent: 15 },
+    { name: 'DB', present: 92, absent: 8 },
+    { name: 'Web', present: 90, absent: 10 },
+  ];
+
+  if (dashboardQ.isLoading || assignmentsQ.isLoading || proctorQ.isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={{ flex:1 }} contentContainerStyle={{ padding:16, paddingBottom:32 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=> { dashboardQ.refetch(); assignmentsQ.refetch(); proctorQ.refetch(); }} />}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:12 }}>Dashboard Overview</Text>
-
-      {/* Top Stats */}
-      <View style={{ flexDirection:'row', flexWrap:'wrap', marginBottom:12 }}>
-        {topStats.map((s,i)=>(
-          <View key={i} style={{ width:'48%', marginRight: i%2===0? '4%':0, marginBottom:12, backgroundColor:s.bg, padding:12, borderRadius:12 }}>
-            <Text style={{ fontSize:12, color:'#475569' }}>{s.label}</Text>
-            <Text style={{ fontFamily:'Inter-SemiBold', fontSize:20, color:s.accent, marginTop:4 }}>{s.value}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+    >
+      {/* Header */}
+      <AnimatedCard>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Faculty Dashboard</Text>
+          <View style={styles.headerMeta}>
+            <Text style={styles.headerMetaText}>Computer Science Department</Text>
+            <Text style={styles.headerMetaDivider}>|</Text>
+            <Text style={styles.headerMetaText}>Spring Semester 2025</Text>
           </View>
-        ))}
-      </View>
+        </View>
+      </AnimatedCard>
 
-      {/* Today Classes & Attendance Snapshot */}
-      <View style={{ gap:12, marginBottom:20 }}>
-        <View style={{ backgroundColor:'#eef2ff', padding:14, borderRadius:14 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold', marginBottom:6 }}>Today Classes</Text>
-          {overview?.today_classes?.length ? overview.today_classes.map((c:any,i:number)=> (
-            <Text key={i} style={{ fontSize:12, marginTop:4 }}>{c.subject} • {c.section} • {c.start_time}-{c.end_time}</Text>
-          )): <Text style={{ fontSize:12 }}>No classes.</Text>}
-        </View>
-        <View style={{ backgroundColor:'#f0fdf4', padding:14, borderRadius:14 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold', marginBottom:6 }}>Attendance Snapshot</Text>
-          <Text style={{ fontSize:32, fontFamily:'Inter-SemiBold', color:'#065f46' }}>{overview?.attendance_snapshot ?? '--'}%</Text>
-        </View>
-      </View>
-
-      {/* Assigned Subjects */}
-      <View style={{ backgroundColor:'#fff', padding:14, borderRadius:16, marginBottom:20, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:6, elevation:2 }}>
-        <View style={{ flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-          <Text style={{ fontFamily:'Inter-SemiBold', fontSize:16 }}>Assigned Subjects</Text>
-          <TouchableOpacity onPress={()=> navigation.navigate('Timetable')}><Text style={{ color:'#2563eb', fontSize:12 }}>View All</Text></TouchableOpacity>
-        </View>
-        {subjects.length ? subjects.slice(0,6).map((s:any,i:number)=>(
-          <View key={i} style={{ paddingVertical:8, borderBottomWidth: i===subjects.slice(0,6).length-1?0:1, borderBottomColor:'#e2e8f0' }}>
-            <Text style={{ fontFamily:'Inter-SemiBold', fontSize:14 }}>{s.subject_name} <Text style={{ color:'#64748b' }}>({s.subject_code})</Text></Text>
-            <Text style={{ fontSize:11, color:'#475569', marginTop:2 }}>{s.branch} • Sem {s.semester} • Sec {s.section}</Text>
-          </View>
-        )): <Text style={{ fontSize:12, color:'#64748b' }}>No subjects assigned.</Text>}
+      {/* Quick Stats */}
+      <View style={styles.statsContainer}>
+        <StatsCard
+          label="Today's Classes"
+          value={todaysClasses.length}
+          icon="time"
+          color="#059669"
+          bgColor="#f0fdf4"
+          delay={100}
+        />
+        <StatsCard
+          label="Total Students"
+          value={proctorStudents.length}
+          icon="people"
+          color="#2563eb"
+          bgColor="#eff6ff"
+          delay={200}
+        />
+        <StatsCard
+          label="Pending Tasks"
+          value="8"
+          icon="document-text"
+          color="#f59e0b"
+          bgColor="#fefce8"
+          delay={300}
+        />
+        <StatsCard
+          label="Announcements"
+          value="3"
+          icon="megaphone"
+          color="#7c3aed"
+          bgColor="#faf5ff"
+          delay={400}
+        />
       </View>
 
       {/* Quick Actions */}
-      <View style={{ backgroundColor:'#fff', padding:14, borderRadius:16, marginBottom:20, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:6, elevation:2 }}>
-        <Text style={{ fontFamily:'Inter-SemiBold', fontSize:16, marginBottom:12 }}>Quick Actions</Text>
-        <View style={{ flexDirection:'row', flexWrap:'wrap' }}>
-          {[
-            { label:'Take Attendance', to:'Attendance', color:'#2563eb' },
-            { label:'Upload Marks', to:'Upload Marks', color:'#0f766e' },
-            { label:'Mentoring', to:'Proctor', color:'#7c3aed' },
-            { label:'Reports', to:'Reports', color:'#d97706' },
-            { label:'Leaves', to:'Manage Student Leave', color:'#db2777' },
-            { label:'Statistics', to:'Generate Statistics', color:'#0d9488' },
-            { label:'Notifications', to:'Notification Center', color:'#1d4ed8' },
-            { label:'Announcements', to:'Announcements', color:'#f59e0b' },
-          ].map(a => (
-            <TouchableOpacity key={a.label} onPress={()=> navigation.navigate(a.to)} style={{ width:'48%', marginRight: a.label.endsWith('e')? '4%': (Math.random()<0?'4%':0), marginBottom:12, backgroundColor:'#f1f5f9', padding:12, borderRadius:12 }}>
-              <Text style={{ fontSize:12, color:'#475569' }}>{a.label}</Text>
-              <View style={{ height:4, backgroundColor:a.color, marginTop:8, borderRadius:2 }} />
-            </TouchableOpacity>
-          ))}
+      <AnimatedCard delay={500}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionDescription}>Common tasks for today</Text>
+          <View style={styles.quickActionsContainer}>
+            <QuickActionButton
+              title="Take Attendance"
+              icon="checkmark-circle"
+              color="#059669"
+              onPress={() => navigation.navigate('Take Attendance')}
+              delay={600}
+            />
+            <QuickActionButton
+              title="Apply Leave"
+              icon="calendar"
+              color="#f59e0b"
+              onPress={() => navigation.navigate('Apply Leave')}
+              delay={700}
+            />
+            <QuickActionButton
+              title="Upload Marks"
+              icon="cloud-upload"
+              color="#2563eb"
+              onPress={() => navigation.navigate('Upload Marks')}
+              delay={800}
+            />
+          </View>
         </View>
-      </View>
+      </AnimatedCard>
 
-      {/* Performance Trends */}
-      <View style={{ backgroundColor:'#fff', padding:14, borderRadius:16, marginBottom:28, shadowColor:'#000', shadowOpacity:0.05, shadowRadius:6, elevation:2 }}>
-        <Text style={{ fontFamily:'Inter-SemiBold', fontSize:16, marginBottom:12 }}>Performance Trends</Text>
-        <Text style={{ fontFamily:'Inter-SemiBold', fontSize:13, marginBottom:6 }}>Attendance (%)</Text>
-        {attendanceData.length ? attendanceData.slice(0,8).map((d,i)=>(
-          <View key={i} style={{ marginBottom:8 }}>
-            <Text numberOfLines={1} style={{ fontSize:11, color:'#475569' }}>{d.name}</Text>
-            <MetricBar value={d.attendance} color='#2563eb' />
+      {/* Today's Schedule */}
+      <AnimatedCard delay={900}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Today's Schedule</Text>
+          <Text style={styles.sectionDescription}>Your classes for today, September 5, 2025</Text>
+          <View style={styles.classesContainer}>
+            {todaysClasses.map((classInfo, index) => (
+              <ClassCard
+                key={index}
+                classInfo={classInfo}
+                delay={1000 + (index * 100)}
+              />
+            ))}
           </View>
-        )): <Text style={{ fontSize:12, color:'#64748b' }}>No attendance data.</Text>}
-        <Text style={{ fontFamily:'Inter-SemiBold', fontSize:13, marginVertical:6 }}>Average Marks</Text>
-        {marksData.length ? marksData.slice(0,8).map((d,i)=>(
-          <View key={i} style={{ marginBottom:8 }}>
-            <Text numberOfLines={1} style={{ fontSize:11, color:'#475569' }}>{d.name}</Text>
-            <MetricBar value={d.avg} color='#7c3aed' />
-          </View>
-        )): <Text style={{ fontSize:12, color:'#64748b' }}>No marks data.</Text>}
-      </View>
+        </View>
+      </AnimatedCard>
 
-      {(dashboardQ.isLoading || assignmentsQ.isLoading || proctorQ.isLoading) && (
-        <ActivityIndicator />
-      )}
+      {/* Attendance Chart */}
+      <AnimatedCard delay={1300}>
+        <AttendanceChart
+          title="Course Attendance Statistics"
+          description="Attendance breakdown by course"
+          data={attendanceData}
+        />
+      </AnimatedCard>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#64748b',
+  },
+  header: {
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  headerMetaText: {
+    fontSize: 14,
+    color: '#64748b',
+  },
+  headerMetaDivider: {
+    marginHorizontal: 8,
+    color: '#cbd5e1',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 24,
+    gap: 12,
+  },
+  statsCard: {
+    width: (width - 44) / 2,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statsGradient: {
+    flex: 1,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statsIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  statsLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  statsValue: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 16,
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickActionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  classesContainer: {
+    gap: 12,
+  },
+  classCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  classHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  classInfo: {
+    flex: 1,
+  },
+  classCourse: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  classMeta: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  classMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  classMetaText: {
+    fontSize: 12,
+    color: '#64748b',
+    marginLeft: 4,
+  },
+  classActions: {
+    alignItems: 'flex-end',
+  },
+  studentCount: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  takeAttendanceBtn: {
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  takeAttendanceText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+});

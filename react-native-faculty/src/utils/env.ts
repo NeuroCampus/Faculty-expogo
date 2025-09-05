@@ -3,7 +3,15 @@
 // In Expo, public env vars are injected at build time; we defensively access via (globalThis as any)?.process?.env.
 const env = (globalThis as any)?.process?.env || {};
 function normalizeBase(raw?: string) {
-	let base = (raw && raw.trim()) || 'http://127.0.0.1:8000/api';
+	let base = (raw && raw.trim());
+	
+	if (!base) {
+		// Try to detect protocol from current location for web
+		const isWeb = typeof window !== 'undefined';
+		const protocol = isWeb && window.location ? window.location.protocol : 'http:';
+		base = `${protocol}//127.0.0.1:8000/api`;
+	}
+	
 	// Remove trailing slash for normalization
 	base = base.replace(/\/$/, '');
 	// Append /api if not already present as a path segment

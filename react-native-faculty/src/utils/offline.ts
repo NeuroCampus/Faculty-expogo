@@ -19,14 +19,14 @@ export async function getCache<T = any>(key: string, maxAgeMs: number = 1000 * 6
   }
 }
 
-export async function fetchWithCache<T = any>(key: string, fetcher: () => Promise<{ ok: boolean; data?: T; error?: string }>, maxAgeMs?: number): Promise<{ ok: boolean; data?: T; error?: string }> {
+export async function fetchWithCache<T = any>(key: string, fetcher: () => Promise<{ success: boolean; data?: T; message?: string; error?: string }>, maxAgeMs?: number): Promise<{ success: boolean; data?: T; message?: string; error?: string }> {
   const res = await fetcher();
-  if (res.ok) {
+  if (res.success) {
     await setCache(key, res.data);
     return res;
   }
   const cached = await getCache<T>(key, maxAgeMs);
-  if (cached) return { ok: true, data: cached } as any;
+  if (cached) return { success: true, data: cached } as any;
   return res;
 }
 

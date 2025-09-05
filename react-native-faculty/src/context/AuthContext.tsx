@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (access) {
           const res = await getProfile();
           if (cancelled) return;
-          if (res.ok) {
+          if (res.success) {
             startProactiveRefresh();
             setState({ loading: false, isAuthenticated: true, role, user: userStr ? JSON.parse(userStr) : res.data?.data });
           } else {
@@ -65,9 +65,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!state.userIdForOtp) return { success: false, message: 'Missing user context' };
     setVerifying(true);
     try {
-      const { ok, data, error } = await verifyOTP(state.userIdForOtp, otp);
-      if (!ok || !data?.access) {
-        return { success: false, message: error || data?.message || 'Invalid OTP' };
+      const { success, data, message } = await verifyOTP(state.userIdForOtp, otp);
+      if (!success || !data?.access) {
+        return { success: false, message: message || 'Invalid OTP' };
       }
       // Tokens persisted inside verifyOTP util. Now mark authed.
       setState(s => ({ ...s, isAuthenticated: true, otpRequired: false, userIdForOtp: null, role: data.role, user: data.profile }));

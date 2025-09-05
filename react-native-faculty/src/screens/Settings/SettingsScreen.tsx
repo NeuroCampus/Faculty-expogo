@@ -20,7 +20,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex:1, padding:16 }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:16 }}>Settings</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:16 }}>Settings</Text>
       <TouchableOpacity onPress={scheduleLocalTestNotification} style={{ backgroundColor:'#2563eb', padding:12, borderRadius:8, marginBottom:12 }}>
         <Text style={{ color:'#fff', textAlign:'center' }}>Test Local Notification</Text>
       </TouchableOpacity>

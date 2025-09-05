@@ -17,7 +17,7 @@ export default function ResetPasswordScreen({ navigation }: any) {
   }
   return (
     <View style={{ flex:1, padding:24, justifyContent:'center' }}>
-      <Text style={{ fontSize:22, fontFamily:'Inter-SemiBold', marginBottom:16 }}>Reset Password</Text>
+      <Text style={{ fontSize:22, fontFamily:'System', marginBottom:16 }}>Reset Password</Text>
       <TextInput value={userId} onChangeText={setUserId} placeholder='User ID' style={{ borderWidth:1, borderColor:'#ccc', borderRadius:8, padding:12, marginBottom:8 }} />
       <TextInput value={otp} onChangeText={setOtp} placeholder='OTP' style={{ borderWidth:1, borderColor:'#ccc', borderRadius:8, padding:12, marginBottom:8 }} />
       <TextInput value={pass} onChangeText={setPass} placeholder='New Password' secureTextEntry style={{ borderWidth:1, borderColor:'#ccc', borderRadius:8, padding:12, marginBottom:8 }} />

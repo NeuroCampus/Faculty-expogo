@@ -26,6 +26,7 @@ import AssignmentsScreen from '../screens/Assignments/AssignmentsScreen';
 import ExamsScreen from '../screens/Exams/ExamsScreen';
 import ReportsScreen from '../screens/Reports/ReportsScreen';
 import { AppHeader } from '../components/layout/AppHeader';
+import { CustomDrawer } from '../components/layout/CustomDrawer';
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,28 +42,30 @@ function TabNavigator() {
       <Tabs.Screen name="Attendance" component={AttendanceScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="checkbox" color={color} size={size} /> }} />
       <Tabs.Screen name="Announcements" component={AnnouncementsScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="notifications" color={color} size={size} /> }} />
       <Tabs.Screen name="Proctor" component={ProctorScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} /> }} />
-      <Tabs.Screen name="Settings" component={SettingsScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="settings" color={color} size={size} /> }} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: ({ color, size }) => <Ionicons name="person" color={color} size={size} /> }} />
     </Tabs.Navigator>
   );
 }
 
 function DrawerNavigator() {
   return (
-    <Drawer.Navigator screenOptions={({ navigation, route }: any) => ({ header: () => <AppHeader title={route.name} onMenu={() => navigation.openDrawer()} /> })}>
-  <Drawer.Screen name="Home" component={TabNavigator} />
-  <Drawer.Screen name="Upload Marks" component={UploadMarksScreen} />
-      <Drawer.Screen name="Leave" component={LeaveScreen} />
-      <Drawer.Screen name="Timetable" component={TimetableScreen} />
-  <Drawer.Screen name="Attendance Records" component={AttendanceRecordsScreen} />
-      <Drawer.Screen name="Profile" component={ProfileScreen} />
-      <Drawer.Screen name="Notification Center" component={NotificationCenterScreen} />
-      <Drawer.Screen name="Faculty Stats" component={FacultyStatsScreen} />
-      <Drawer.Screen name="Generate Statistics" component={GenerateStatisticsScreen} />
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawer {...props} />}
+      screenOptions={({ navigation, route }: any) => ({
+        header: () => <AppHeader title={route.name} onMenu={() => navigation.openDrawer()} />
+      })}
+    >
+      <Drawer.Screen name="Dashboard" component={TabNavigator} />
+      <Drawer.Screen name="Take Attendance" component={AttendanceScreen} />
+      <Drawer.Screen name="Upload Marks" component={UploadMarksScreen} />
+      <Drawer.Screen name="Apply Leave" component={LeaveScreen} />
+      <Drawer.Screen name="Attendance Records" component={AttendanceRecordsScreen} />
+      <Drawer.Screen name="Announcements" component={AnnouncementsScreen} />
+      <Drawer.Screen name="Proctor Students" component={ProctorScreen} />
       <Drawer.Screen name="Manage Student Leave" component={ManageStudentLeaveScreen} />
-  <Drawer.Screen name="Assignments" component={AssignmentsScreen} />
-  <Drawer.Screen name="Exams" component={ExamsScreen} />
-  <Drawer.Screen name="Reports" component={ReportsScreen} />
-      <Drawer.Screen name="Proctor Student Detail" component={ProctorStudentDetailScreen} options={{ drawerItemStyle: { height: 0 } as any }} />
+      <Drawer.Screen name="Timetable" component={TimetableScreen} />
+      <Drawer.Screen name="Profile" component={ProfileScreen} />
+      <Drawer.Screen name="Generate Statistics" component={GenerateStatisticsScreen} />
     </Drawer.Navigator>
   );
 }

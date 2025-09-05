@@ -9,7 +9,10 @@ const schema = z.object({ username: z.string().min(1), password: z.string().min(
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginScreen() {
-  const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({ 
+    resolver: zodResolver(schema),
+    defaultValues: { username: '', password: '' }
+  });
   const { loginUser } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -23,7 +26,7 @@ export default function LoginScreen() {
 
   return (
     <View style={{ flex:1, padding:24, justifyContent:'center' }}>
-      <Text style={{ fontSize:24, fontFamily:'Inter-SemiBold', marginBottom:24 }}>Faculty Login</Text>
+            <Text style={{ fontSize:24, fontFamily:'System', marginBottom:24 }}>Faculty Login</Text>
       <Controller name="username" control={control} render={({ field:{ onChange, value } }) => (
         <TextInput placeholder="Username" autoCapitalize='none' value={value} onChangeText={onChange} style={{ borderWidth:1, borderColor:'#ccc', padding:12, borderRadius:8, marginBottom:8 }} />
       )} />
@@ -34,7 +37,7 @@ export default function LoginScreen() {
       {errors.password && <Text style={{ color:'red', marginBottom:8 }}>Password required</Text>}
       {error && <Text style={{ color:'red', marginBottom:12 }}>{error}</Text>}
       <TouchableOpacity onPress={handleSubmit(onSubmit)} disabled={loading} style={{ backgroundColor:'#2563eb', padding:14, borderRadius:8, alignItems:'center' }}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color:'#fff', fontFamily:'Inter-SemiBold' }}>Login</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color:'#fff', fontFamily:'System' }}>Login</Text>}
       </TouchableOpacity>
     </View>
   );
